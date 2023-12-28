@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -22,8 +23,9 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "MergePdf", //
         mixinStandardHelpOptions = true, //
-        version = "MergePdf 0.1", //
-        description = "MergePdf made with jbang")
+        version = "MergePdf 0.2", //
+        description = "MergePdf made with jbang", //
+        helpCommand = true)
 class MergePdf implements Callable<Integer> {
 
     private static final String OUTPUT_DEF_VAL = "merged";
@@ -62,10 +64,11 @@ class MergePdf implements Callable<Integer> {
         pmu.setDestinationFileName(out);
         pmu.setDocumentMergeMode(PDFMergerUtility.DocumentMergeMode.OPTIMIZE_RESOURCES_MODE);
 
-        var listDirFiles = Arrays.stream(dirs)
-            .map(dir -> dir.listFiles())
-            .flatMap(files -> Arrays.stream(files))
-            .collect(Collectors.toList());
+        var listDirFiles = dirs == null ? new ArrayList<File>()
+                : Arrays.stream(dirs)
+                        .map(dir -> dir.listFiles())
+                        .flatMap(files -> Arrays.stream(files))
+                        .collect(Collectors.toList());
 
         Stream.concat(Arrays.stream(files), listDirFiles.stream())
                 .filter(file -> file.getName().endsWith(PDF_EXT))
@@ -129,8 +132,8 @@ class MergePdf implements Callable<Integer> {
             return out;
         }
         return outputFileName.endsWith(PDF_EXT) //
-            ? outputFileName 
-            : outputFileName + PDF_EXT;
+                ? outputFileName
+                : outputFileName + PDF_EXT;
     }
 
 }
