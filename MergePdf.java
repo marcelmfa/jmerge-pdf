@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
