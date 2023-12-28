@@ -35,12 +35,12 @@ class MergePdf implements Callable<Integer> {
     @Parameters(index = "0", //
             description = "Arquivos individuais de entrada", //
             arity = "0..*")
-    private File[] files;
+    private File[] files = new File[]{};
 
     @Option(names = { "-d", "--dir" }, //
             description = "Diretórios para serem lidos", //
             arity = "0..*")
-    private File[] dirs;
+    private File[] dirs = new File[]{};
 
     @Option(names = { "-o", "--output" }, //
             description = "Nome do arquivo de saída", //
@@ -64,12 +64,11 @@ class MergePdf implements Callable<Integer> {
         pmu.setDestinationFileName(out);
         pmu.setDocumentMergeMode(PDFMergerUtility.DocumentMergeMode.OPTIMIZE_RESOURCES_MODE);
 
-        var listDirFiles = dirs == null ? new ArrayList<File>()
-                : Arrays.stream(dirs)
+        var listDirFiles = Arrays.stream(dirs)
                         .map(dir -> dir.listFiles())
                         .flatMap(files -> Arrays.stream(files))
                         .collect(Collectors.toList());
-
+                        
         Stream.concat(Arrays.stream(files), listDirFiles.stream())
                 .filter(file -> file.getName().endsWith(PDF_EXT))
                 .filter(file -> file.exists() && file.canRead())
