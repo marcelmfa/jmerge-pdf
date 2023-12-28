@@ -2,14 +2,15 @@
 //DEPS info.picocli:picocli:4.7.5
 //DEPS org.apache.pdfbox:pdfbox:2.0.22
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
@@ -30,9 +31,14 @@ class MergePdf implements Callable<Integer> {
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd-HH_mm");
 
     @Parameters(index = "0", //
-            description = "Arquivos de entrada", //
+            description = "Arquivos individuais de entrada", //
             arity = "0..*")
-    private String[] fileNames;
+    private File[] files;
+
+    @Option(names = { "-d", "--dir" }, //
+            description = "Diretórios para serem lidos", //
+            arity = "0..*")
+    private File[] dirs;
 
     @Option(names = { "-o", "--output" }, //
             description = "Nome do arquivo de saída", //
@@ -46,7 +52,7 @@ class MergePdf implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        if (emptyParams()) {
+        if (emptyParams() && emptyArgs()) {
             printErrorMsgAnsi("Nenhum arquivo para merge foi informado");
             return 1;
         }
@@ -56,15 +62,20 @@ class MergePdf implements Callable<Integer> {
         pmu.setDestinationFileName(out);
         pmu.setDocumentMergeMode(PDFMergerUtility.DocumentMergeMode.OPTIMIZE_RESOURCES_MODE);
 
-        Arrays.asList(fileNames).stream()
-                .map(filename -> Paths.get(filename))
-                .filter(path -> Files.exists(path))
-                .forEach(path -> {
+        var listDirFiles = Arrays.stream(dirs)
+            .map(dir -> dir.listFiles())
+            .flatMap(files -> Arrays.stream(files))
+            .collect(Collectors.toList());
+
+        Stream.concat(Arrays.stream(files), listDirFiles.stream())
+                .filter(file -> file.getName().endsWith(PDF_EXT))
+                .filter(file -> file.exists() && file.canRead())
+                .forEach(file -> {
                     try {
-                        pmu.addSource(path.toFile());
-                        printInfoMsgAnsi("PDF adicionado: " + path);
+                        pmu.addSource(file);
+                        printInfoMsgAnsi("PDF adicionado: " + file.getName());
                     } catch (IOException e) {
-                        printErrorMsgAnsi("FALHA ao ler arquivo " + path + ". Erro: " + e.getMessage());
+                        printErrorMsgAnsi("FALHA ao ler arquivo " + file.getName() + ". Erro: " + e.getMessage());
                     }
                 });
 
@@ -99,7 +110,11 @@ class MergePdf implements Callable<Integer> {
     }
 
     private boolean emptyParams() {
-        return fileNames == null || fileNames.length == 0;
+        return files == null || files.length == 0;
+    }
+
+    private boolean emptyArgs() {
+        return dirs == null || dirs.length == 0;
     }
 
     /**
