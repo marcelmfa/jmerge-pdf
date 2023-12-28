@@ -1,12 +1,10 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
-//DEPS info.picocli:picocli:4.5.0
+//DEPS info.picocli:picocli:4.7.5
 //DEPS org.apache.pdfbox:pdfbox:2.0.22
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -18,6 +16,7 @@ import org.apache.pdfbox.multipdf.PDFMergerUtility;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "MergePdf", //
@@ -28,7 +27,6 @@ class MergePdf implements Callable<Integer> {
 
     private static final String OUTPUT_DEF_VAL = "merged";
     private static final String PDF_EXT = ".pdf";
-    private static final OpenOption[] DEF_READ_FILE_OPTIONS = new OpenOption[] { StandardOpenOption.READ };
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd-HH_mm");
 
     @Parameters(index = "0", //
@@ -36,7 +34,7 @@ class MergePdf implements Callable<Integer> {
             arity = "0..*")
     private String[] fileNames;
 
-    @CommandLine.Option(names = { "-o", "--output" }, //
+    @Option(names = { "-o", "--output" }, //
             description = "Nome do arquivo de saída", //
             defaultValue = OUTPUT_DEF_VAL)
     private String outputFileName;
@@ -63,7 +61,7 @@ class MergePdf implements Callable<Integer> {
                 .filter(path -> Files.exists(path))
                 .forEach(path -> {
                     try {
-                        pmu.addSource(Files.newInputStream(path, DEF_READ_FILE_OPTIONS));
+                        pmu.addSource(path.toFile());
                         printInfoMsgAnsi("PDF adicionado: " + path);
                     } catch (IOException e) {
                         printErrorMsgAnsi("FALHA ao ler arquivo " + path + ". Erro: " + e.getMessage());
